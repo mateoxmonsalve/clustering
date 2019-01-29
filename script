@@ -1,0 +1,64 @@
+#######################################################
+###                 Clustering                #########
+#######################################################
+
+
+
+customers <- read.csv("customers.csv")
+
+# Useful packages are loaded
+
+library (plyr)
+library(ggplot2)
+library(cluster)
+library(lattice)
+library(graphics)
+library(grid)
+library(gridExtra)
+
+
+customers2<-as.matrix(customers[, c("X", "CustomerID", "recency", "frequency", "monetary", "recency.log", "frequency.log", "monetary.log",  "recency.z", "frequency.z", "monetary.z")])
+
+
+
+#  We keep into the analysis only z-scores
+
+customers2 <- customers2[,9:11]
+
+
+#  An overview of the dataset
+
+customers2[1:10, ]
+
+
+# To determine an appropriate value for k, the k-means algorithm is used to identify clusters for k = 1, 2, .. . , 30
+
+wss <- numeric(30)
+for(k in 1:30){
+  wss[k]<-sum(kmeans(customers2, centers=k, nstart = 25, iter.max = 50)$withinss)
+}
+
+
+
+plot(1:30, wss, type="b", xlab="Number of Clusters" , ylab="Within Sum of Squares" )
+
+
+km<-kmeans(customers2,5,nstart=25)
+km
+
+
+df=as.data.frame(customers2)
+df$cluster=factor(km$cluster)
+centers=as.data.frame(km$centers)
+
+g1=ggplot(data=df, aes(x=customers$recency.z, y=customers$frequency.z, color=cluster)) + geom_point()+
+  geom_point(data=centers, aes(x=centers$recency.z, y=centers$frequency.z), color=c("indianred1", "khaki3", "lightgreen", "lightskyblue", "plum2"), size=8, show.legend=FALSE)
+
+g2=ggplot(data=df, aes(x=customers$recency.z, y=customers$monetary.z, color=cluster)) + geom_point()+
+  geom_point(data=centers, aes(x=centers$recency.z, y=centers$monetary.z), color=c("indianred1", "khaki3", "lightgreen", "lightskyblue", "plum2"), size=8, show.legend=FALSE)
+
+g3=ggplot(data=df, aes(x=customers$frequency.z, y=customers$monetary.z, color=cluster)) + geom_point()+
+  geom_point(data=centers, aes(x=centers$frequency.z, y=centers$monetary.z), color=c("indianred1", "khaki3", "lightgreen", "lightskyblue", "plum2"), size=8, show.legend=FALSE)
+
+
+grid.arrange(g1,g2,g3)
